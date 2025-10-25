@@ -1,0 +1,439 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>AQI — Mono UI + Colorful Cards (Google Sheet Only)</title>
+<style>
+  /* ===== Monochrome Shell ===== */
+  :root{
+    --bg:#f9fafb; --surface:#ffffff; --text:#0f172a; --muted:#6b7280; --line:#e5e7eb;
+    --shadow:0 12px 30px rgba(2,6,23,.08); --r:20px;
+
+    /* สีการ์ดไฮไลต์ (เฉพาะ card) */
+    --good1:#10b981; --good2:#34d399;
+    --mod1:#f59e0b;  --mod2:#fbbf24;
+    --usg1:#fb923c;  --usg2:#f97316;
+    --unh1:#ef4444;  --unh2:#f43f5e;
+    --very1:#8b5cf6; --very2:#6366f1;
+    --haz1:#475569;  --haz2:#111827;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{ --bg:#0b1220; --surface:#0e1526; --text:#e5e7eb; --muted:#94a3b8; --line:#1f2937; --shadow:0 20px 50px rgba(0,0,0,.45); }
+  }
+  *{box-sizing:border-box}
+  body{ margin:0; background:var(--bg); color:var(--text);
+        font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Inter,"Noto Sans Thai",Roboto,sans-serif;
+        -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale; }
+  .wrap{max-width:1040px;margin:48px auto;padding:0 20px}
+
+  /* Header */
+  .top{display:flex;justify-content:space-between;align-items:end;gap:12px;margin-bottom:16px}
+  .title{font-size:24px;font-weight:800;letter-spacing:.2px;margin:0}
+  .sub{font-size:12px;color:var(--muted)}
+
+  /* Cards (base) */
+  .card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow)}
+  .hover-raise{transition:transform .16s ease, box-shadow .16s ease}
+  .hover-raise:hover{transform:translateY(-2px); box-shadow:0 14px 34px rgba(2,6,23,.12)}
+
+  /* Gradient cards (highlight only) */
+  .grad-good{background:linear-gradient(135deg,var(--good1),var(--good2)); color:#fff}
+  .grad-mod{ background:linear-gradient(135deg,var(--mod1), var(--mod2));  color:#111}
+  .grad-usg{ background:linear-gradient(135deg,var(--usg1), var(--usg2));  color:#111}
+  .grad-unh{ background:linear-gradient(135deg,var(--unh1), var(--unh2));  color:#fff}
+  .grad-very{background:linear-gradient(135deg,var(--very1),var(--very2)); color:#fff}
+  .grad-haz{ background:linear-gradient(135deg,var(--haz1), var(--haz2));  color:#fff}
+
+  /* Layout */
+  .grid{display:grid;grid-template-columns:1.1fr .9fr;gap:14px}
+  @media (max-width:900px){ .grid{grid-template-columns:1fr} }
+
+  /* Today */
+  .today{position:relative;overflow:hidden}
+  .today .inner{padding:26px}
+  .badge{display:inline-flex;align-items:center;gap:8px;background:rgba(255,255,255,.18);border:1px solid rgba(255,255,255,.38);backdrop-filter:blur(6px);padding:6px 10px;border-radius:999px;font-size:12px;font-weight:700}
+  .aqi{font-size:68px;font-weight:900;line-height:1;margin:10px 0 6px}
+  .subtxt{font-size:12px;opacity:.95}
+  .pmline{font-size:13px;opacity:.92;margin-top:6px}
+  .delta{margin-top:8px;font-size:12px;opacity:.95}
+
+  /* Mini/KPIs (mono) */
+  .mini{display:grid;gap:12px;padding:16px}
+  .mini .hdr{display:flex;justify-content:space-between;align-items:center}
+  .mini .hdr .t{font-size:13px;font-weight:700}
+  .spark{height:60px}
+  .kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+  .kpi{border:1px solid var(--line);border-radius:12px;padding:12px;text-align:center}
+  .kpi .k{font-size:11px;color:var(--muted)}
+  .kpi .v{font-size:18px;font-weight:800;margin-top:2px}
+
+  /* Week overview */
+  .h2{font-size:14px;font-weight:800;margin:22px 0 10px}
+  .row-scroll{display:flex;gap:12px;overflow-x:auto;padding-bottom:6px}
+  .chip{flex:0 0 auto;min-width:120px;border:1px solid var(--line);border-radius:16px;overflow:hidden;cursor:pointer;transition:transform .12s ease, box-shadow .12s ease;background:var(--surface)}
+  .chip:hover{transform:translateY(-2px); box-shadow:0 12px 26px rgba(2,6,23,.12)}
+  .chip .hdr{padding:8px 10px;display:flex;align-items:center;gap:8px;border-bottom:1px solid var(--line)}
+  .chip .dot{width:10px;height:10px;border-radius:50%}
+  .chip .day{font-size:12px;color:var(--muted)}
+  .chip .main{padding:12px}
+  .chip .val{font-size:24px;font-weight:900;line-height:1}
+  .chip .row2{margin-top:4px;display:flex;justify-content:space-between;font-size:12px;color:var(--muted)}
+  .chip .colorpad{height:6px}
+
+  /* Modal */
+  .modal-wrap{position:fixed;inset:0;background:rgba(2,6,23,.35);display:none;align-items:center;justify-content:center;padding:16px}
+  .modal{background:var(--surface);border:1px solid var(--line);border-radius:18px;box-shadow:var(--shadow);max-width:600px;width:100%}
+  .modal .hd{padding:14px 16px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center}
+  .modal .t{font-weight:800}
+  .modal .bd{padding:16px}
+  .modal .ft{padding:12px 16px;border-top:1px solid var(--line);display:flex;justify-content:flex-end}
+  .btn{background:transparent;border:1px solid var(--line);border-radius:10px;padding:8px 12px;cursor:pointer;color:var(--text)}
+  .tbl{width:100%;border-collapse:separate;border-spacing:0;border:1px solid var(--line);border-radius:12px;overflow:hidden}
+  .tbl th,.tbl td{padding:10px 12px;border-bottom:1px solid var(--line);text-align:left}
+  .tbl tr:last-child td{border-bottom:none}
+
+  /* DEBUG overlay */
+  #debugBox{position:fixed;top:12px;right:12px;z-index:9999;font-family:ui-monospace, SFMono-Regular, Menlo, monospace;font-size:12px;white-space:pre;background:rgba(0,0,0,.78);color:#fff;padding:10px 12px;border-radius:10px;box-shadow:0 6px 18px rgba(0,0,0,.25);display:none}
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="top">
+      <h1 class="title">Air Quality</h1>
+      <div class="sub" id="updatedAt">กำลังโหลด…</div>
+    </div>
+
+    <div class="grid">
+      <!-- Today (gradient highlight) -->
+      <div id="todayCard" class="card today hover-raise grad-good">
+        <div class="inner">
+          <div class="badge" id="badgeCat">Good</div>
+          <div id="todayAQI" class="aqi">--</div>
+          <div id="todayCat" class="subtxt">—</div>
+          <div id="todayPM" class="pmline">PM2.5 — μg/m³ · PM10 — μg/m³</div>
+          <div id="todayDom" class="subtxt" style="margin-top:6px">Dominant —</div>
+          <div id="todayDelta" class="delta"></div>
+        </div>
+      </div>
+
+      <!-- Mini-trend / KPIs (mono) -->
+      <div class="card mini">
+        <div class="hdr">
+          <div class="t">Mini-trend (24h)</div>
+          <div class="sub">AQI (max PM2.5/PM10)</div>
+        </div>
+        <svg id="spark" class="spark" viewBox="0 0 320 60" preserveAspectRatio="none"></svg>
+        <div class="kpis">
+          <div class="kpi"><div class="k">Avg PM2.5 (24h)</div><div class="v" id="kAvg25">--</div></div>
+          <div class="kpi"><div class="k">Avg PM10 (24h)</div><div class="v" id="kAvg10">--</div></div>
+          <div class="kpi"><div class="k">Peak AQI (24h)</div><div class="v" id="kPeak">--</div></div>
+          <div class="kpi"><div class="k">% Safe</div><div class="v" id="kSafe">--%</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Week -->
+    <div class="h2">Week overview</div>
+    <div id="weekRow" class="row-scroll"></div>
+  </div>
+
+  <!-- Modal -->
+  <div id="modalWrap" class="modal-wrap" role="dialog" aria-modal="true">
+    <div class="modal">
+      <div class="hd">
+        <div id="modalTitle" class="t">Details</div>
+        <div class="sub" id="modalCat">—</div>
+      </div>
+      <div class="bd">
+        <table class="tbl">
+          <tr><th style="width:45%">Dominant pollutant</th><td id="mDom">—</td></tr>
+          <tr><th>Avg PM2.5 (day)</th><td id="mAvg25">— μg/m³</td></tr>
+          <tr><th>Avg PM10 (day)</th><td id="mAvg10">— μg/m³</td></tr>
+          <tr><th>AQI (PM2.5)</th><td id="mAQI25">—</td></tr>
+          <tr><th>AQI (PM10)</th><td id="mAQI10">—</td></tr>
+          <tr><th>Final AQI</th><td id="mAQIFinal">—</td></tr>
+        </table>
+      </div>
+      <div class="ft"><button id="btnClose" class="btn">ปิด</button></div>
+    </div>
+  </div>
+
+  <!-- DEBUG -->
+  <div id="debugBox"></div>
+
+<script>
+/* ===================== CONFIG ===================== */
+const SHEET_ID   = "1gyMroF_xEeT_jIClyFurf2qofKhUvtuT1SHRVAIpSoc";
+const GID        = "0";
+/* ถ้ามีหัวตารางให้ตั้ง true */
+const HAS_HEADER = false;
+/* %Safe (คำนวณจากค่า PM โดยตรง) */
+const SAFE = { pm25: 15, pm10: 45 };
+/* เปิดกล่องดีบักเพื่อดูสาเหตุแถวที่ถูกข้าม */
+const DEBUG_MODE = false;
+
+const CSV_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?gid=${GID}&format=csv&single=true`;
+
+/* ===================== Parsers (Robust) ===================== */
+function parseCSV(t){
+  const out=[]; let i=0,cur="",row=[],q=false;
+  while(i<t.length){
+    const ch=t[i];
+    if(q){
+      if(ch=='"' && t[i+1]=='"'){cur+='"'; i+=2; continue}
+      if(ch=='"'){q=false; i++; continue}
+      cur+=ch; i++; continue
+    }
+    if(ch=='"'){q=true; i++; continue}
+    if(ch==','){row.push(cur); cur=""; i++; continue}
+    if(ch=='\n'||ch=='\r'){ if(cur.length||row.length){row.push(cur); out.push(row)} cur=""; row=[]; i++; if(ch=='\r'&&t[i]=='\n') i++; continue}
+    cur+=ch; i++;
+  }
+  if(cur.length||row.length){row.push(cur); out.push(row)}
+  return out;
+}
+
+/* ทำความสะอาดค่าตัวเลข: ตัดหน่วย/ช่องว่าง, รองรับ 1,234.56 / 1.234,56 */
+function cleanNumberCell(s){
+  if(s==null) return NaN;
+  s = String(s).trim().replace(/[^\d,.\-]/g, "");
+  const hasComma = s.includes(","), hasDot = s.includes(".");
+  if(hasComma && hasDot){ s = s.replace(/,/g,""); } // 1,234.56 → 1234.56
+  else if(hasComma && !hasDot){ s = s.replace(/,/g,"."); } // 1.234,56 → 1.234.56 → parseFloat ok
+  const n = parseFloat(s);
+  return Number.isFinite(n) ? n : NaN;
+}
+
+/* วันที่หลายแบบ + serial number ของ Google Sheets */
+function parseFlexibleDate(s){
+  if(s==null) return new Date(NaN);
+  const raw = String(s).trim();
+
+  // serial number?
+  if(/^\d+(\.\d+)?$/.test(raw)){
+    const serial = parseFloat(raw);
+    const base = new Date(Date.UTC(1899,11,30)); // Google Sheets
+    const millis = serial * 24*3600*1000;
+    return new Date(base.getTime() + millis);
+  }
+
+  let str = raw.replace("，", ",");
+  if(str.includes(",")){ const [dmy,time=""] = str.split(","); str = dmy.trim()+" "+time.trim(); }
+
+  const tryParse = (re,b)=>{ const m=str.match(re); return m? b(m): null; };
+
+  return (
+    // DD/MM/YYYY HH:MM(:SS)?
+    tryParse(/^(\d{1,2})\/(\d{1,2})\/(\d{4})[ T](\d{1,2}):(\d{2})(?::(\d{2}))?$/, m=> new Date(m[3],m[2]-1,m[1],m[4],m[5],m[6]||0)) ||
+    // MM-DD-YYYY HH:MM(:SS)?
+    tryParse(/^(\d{1,2})-(\d{1,2})-(\d{4})[ T](\d{1,2}):(\d{2})(?::(\d{2}))?$/, m=> new Date(m[3],m[1]-1,m[2],m[4],m[5],m[6]||0)) ||
+    // DD/MM/YYYY (with/without time)
+    tryParse(/^(\d{1,2})\/(\d{1,2})\/(\d{4})(?:[ T](\d{1,2}):(\d{2})(?::(\d{2}))?)?$/, m=> new Date(m[3],m[2]-1,m[1],m[4]||0,m[5]||0,m[6]||0)) ||
+    // fallback
+    new Date(str)
+  );
+}
+
+/* ===================== AQI (EPA) ===================== */
+const BP={pm25:{I:[0,50,100,150,200,300,400,500],C:[0,12,35.5,55.5,150.5,250.5,350.5,500.5]},
+          pm10:{I:[0,50,100,150,200,300,400,500],C:[0,55,155,255,355,425,505,605]}};
+function aqiFromConc(type, x){
+  if(x==null||Number.isNaN(x)) return NaN;
+  const {I,C}=BP[type]; x=+x;
+  for(let k=0;k<C.length-1;k++){
+    if(x>=C[k] && x<C[k+1]){
+      const v = I[k] + (x-C[k])*(I[k+1]-I[k])/(C[k+1]-C[k]);
+      return Math.round(v);
+    }
+  }
+  if(x>=C[C.length-1]) return I[I.length-1];
+  return NaN;
+}
+function catFromAQI(a){
+  if(!(a>=0)) return {name:"—",key:"good",grad:"grad-good"};
+  if(a<=50)  return {name:"Good",key:"good",grad:"grad-good"};
+  if(a<=100) return {name:"Moderate",key:"mod",grad:"grad-mod"};
+  if(a<=150) return {name:"Unhealthy (SG)",key:"usg",grad:"grad-usg"};
+  if(a<=200) return {name:"Unhealthy",key:"unh",grad:"grad-unh"};
+  if(a<=300) return {name:"Very Unhealthy",key:"very",grad:"grad-very"};
+  return {name:"Hazardous",key:"haz",grad:"grad-haz"};
+}
+function gradFromKey(k){return {good:"grad-good",mod:"grad-mod",usg:"grad-usg",unh:"grad-unh",very:"grad-very",haz:"grad-haz"}[k]||"grad-good";}
+
+/* Helpers */
+const avg = a => a.length ? a.reduce((x,y)=>x+y,0)/a.length : NaN;
+const fmt = (n,d=0)=> Number.isFinite(n)? n.toFixed(d) : "--";
+const DAYS=["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
+
+/* ===================== Sparkline ===================== */
+function drawSpark(svg, arr){
+  svg.innerHTML="";
+  const w=320,h=60,p=4;
+  if(!arr.length) return;
+  const max=Math.max(...arr), min=Math.min(...arr);
+  const X=i=> (i/(arr.length-1))*(w-2*p)+p;
+  const Y=v=> max===min? h/2 : h-((v-min)/(max-min))*(h-2*p)-p;
+  let d=""; arr.forEach((v,i)=> d+=(i?"L":"M")+X(i)+" "+Y(v)+" ");
+  const path=document.createElementNS("http://www.w3.org/2000/svg","path");
+  path.setAttribute("d",d); path.setAttribute("fill","none");
+  path.setAttribute("stroke","rgba(107,114,128,.6)"); path.setAttribute("stroke-width","2");
+  svg.appendChild(path);
+}
+
+/* ===================== Modal ===================== */
+const modalWrap=document.getElementById("modalWrap");
+document.getElementById("btnClose").onclick=()=> modalWrap.style.display="none";
+modalWrap.addEventListener("click",e=>{ if(e.target===modalWrap) modalWrap.style.display="none"; });
+
+function openModal(d){
+  document.getElementById("modalTitle").textContent = `${d.fullDay} · AQI ${d.score}`;
+  document.getElementById("modalCat").textContent   = d.status;
+  document.getElementById("mDom").textContent       = d.dom;
+  document.getElementById("mAvg25").textContent     = fmt(d.avg25,1)+" μg/m³";
+  document.getElementById("mAvg10").textContent     = fmt(d.avg10,1)+" μg/m³";
+  document.getElementById("mAQI25").textContent     = d.aqi25 ?? "—";
+  document.getElementById("mAQI10").textContent     = d.aqi10 ?? "—";
+  document.getElementById("mAQIFinal").textContent  = d.score ?? "—";
+  modalWrap.style.display="flex";
+}
+
+/* ===================== Week Chip ===================== */
+function addWeekChip(parent, d){
+  const chip=document.createElement("div");
+  chip.className="chip";
+  chip.innerHTML=`
+    <div class="hdr"><div class="dot" style="background:transparent"></div><div class="day">${d.day}</div></div>
+    <div class="main">
+      <div class="val">${d.score}</div>
+      <div class="row2"><div>${d.status}</div><div>${d.delta==null?"":(d.delta>0?`+${d.delta}`:d.delta)}</div></div>
+    </div>
+    <div class="colorpad ${gradFromKey(d.key)}"></div>
+  `;
+  const dot=chip.querySelector(".dot");
+  const mapDot={good:"var(--good2)",mod:"var(--mod2)",usg:"var(--usg2)",unh:"var(--unh2)",very:"var(--very2)",haz:"var(--haz2)"};
+  dot.style.background = mapDot[d.key] || "var(--line)";
+  chip.onclick=()=> openModal(d);
+  parent.appendChild(chip);
+}
+
+/* ===================== DEBUG ===================== */
+function showDebug(stats){
+  const box=document.getElementById("debugBox");
+  if(!DEBUG_MODE){ box.style.display="none"; return; }
+  box.style.display="block";
+  const {total,used,skipped,reasons,sample}=stats;
+  box.textContent =
+`DEBUG
+total rows:   ${total}
+used rows:    ${used}
+skipped rows: ${skipped}
+reasons:      ${Object.entries(reasons).map(([k,v])=>`${k}:${v}`).join(", ")}
+
+sample skipped (first 3):
+${sample.map(s=>`- [${s.reason}] ${s.row.join(" | ")}`).join("\n")}`;
+}
+
+/* ===================== Main ===================== */
+async function load(){
+  // 1) fetch CSV
+  const res = await fetch(CSV_URL, {cache:"no-store"});
+  if(!res.ok){ document.getElementById("updatedAt").textContent="โหลด CSV ไม่ได้ (ตรวจสิทธิ์แชร์/Publish to web)"; return; }
+  const rows = parseCSV(await res.text());
+  const dataRows = rows.slice(HAS_HEADER?1:0);
+
+  // 2) robust parse with stats
+  const stats = { total:dataRows.length, used:0, skipped:0, reasons:{bad_date:0,no_values:0}, sample:[] };
+  const rec=[];
+  for(const r of dataRows){
+    if(!r || r.length<3){ stats.skipped++; continue; }
+    const t  = parseFlexibleDate(r[0]);
+    const v25= cleanNumberCell(r[1]);
+    const v10= cleanNumberCell(r[2]);
+
+    if(Number.isNaN(t.getTime())){
+      stats.skipped++; stats.reasons.bad_date++; if(stats.sample.length<3) stats.sample.push({reason:"bad_date", row:r}); continue;
+    }
+    if(!Number.isFinite(v25) && !Number.isFinite(v10)){
+      stats.skipped++; stats.reasons.no_values++; if(stats.sample.length<3) stats.sample.push({reason:"no_values", row:r}); continue;
+    }
+    rec.push({t, pm25:v25, pm10:v10});
+    stats.used++;
+  }
+  rec.sort((a,b)=>a.t-b.t);
+
+  showDebug(stats);
+  if(!rec.length){ document.getElementById("updatedAt").textContent="ไม่มีข้อมูลที่อ่านได้จากชีท"; return; }
+
+  const latest = rec[rec.length-1];
+  document.getElementById("updatedAt").textContent = "อัปเดตล่าสุด: " + latest.t.toLocaleString();
+
+  // 3) 24h window
+  const end=latest.t.getTime(), start=end-24*60*60*1000;
+  const in24=rec.filter(x=>x.t.getTime()>=start && x.t.getTime()<=end);
+
+  // 4) Today
+  const a25=aqiFromConc("pm25", latest.pm25), a10=aqiFromConc("pm10", latest.pm10);
+  const aqi=Math.max(a25||0, a10||0), cat=catFromAQI(aqi), dom=(a25>=a10?"PM2.5":"PM10");
+  const todayCard=document.getElementById("todayCard");
+  ["grad-good","grad-mod","grad-usg","grad-unh","grad-very","grad-haz"].forEach(c=> todayCard.classList.remove(c));
+  todayCard.classList.add(cat.grad);
+
+  document.getElementById("badgeCat").textContent=cat.name;
+  document.getElementById("todayAQI").textContent=aqi;
+  document.getElementById("todayCat").textContent=cat.name;
+  document.getElementById("todayPM").textContent=`PM2.5 ${fmt(latest.pm25,1)} μg/m³ · PM10 ${fmt(latest.pm10,1)} μg/m³`;
+  document.getElementById("todayDom").textContent=`Dominant ${dom}`;
+
+  // Δ vs yesterday (เฉลี่ยรายวัน)
+  const dkey=d=> d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
+  const bucket=new Map();
+  for(const r of rec){ const k=dkey(r.t); let v=bucket.get(k); if(!v) v={items:[],date:r.t}; v.items.push(r); v.date=r.t; bucket.set(k,v); }
+  const days=Array.from(bucket.values()).sort((a,b)=>a.date-b.date);
+  const idx=days.findIndex(d=> dkey(d.date)===dkey(latest.t));
+  let delta=null;
+  if(idx>0){
+    const dayAQI = d => Math.round(avg(d.items.map(x=> Math.max(aqiFromConc("pm25",x.pm25)||0, aqiFromConc("pm10",x.pm10)||0))));
+    delta = dayAQI(days[idx]) - dayAQI(days[idx-1]);
+  }
+  document.getElementById("todayDelta").textContent = (delta==null) ? "" : `Δ vs yesterday: ${delta>0?"+":""}${delta}`;
+
+  // 5) KPIs
+  const avg25=avg(in24.map(x=>x.pm25).filter(Number.isFinite));
+  const avg10=avg(in24.map(x=>x.pm10).filter(Number.isFinite));
+  const peak24=Math.max(...in24.map(x=> Math.max(aqiFromConc("pm25",x.pm25)||0, aqiFromConc("pm10",x.pm10)||0)));
+  const safe=Math.round(100 * in24.filter(x=> x.pm25<=SAFE.pm25 && x.pm10<=SAFE.pm10).length / (in24.length||1));
+  document.getElementById("kAvg25").textContent=fmt(avg25,1);
+  document.getElementById("kAvg10").textContent=fmt(avg10,1);
+  document.getElementById("kPeak").textContent=Number.isFinite(peak24)? peak24 : "--";
+  document.getElementById("kSafe").textContent=Number.isFinite(safe)? (safe+"%") : "--";
+
+  // spark
+  const series=in24.map(x=> Math.max(aqiFromConc("pm25",x.pm25)||0, aqiFromConc("pm10",x.pm10)||0));
+  drawSpark(document.getElementById("spark"), series);
+
+  // 6) Week overview (เฉลี่ยรายวัน → AQI)
+  const weekMeta = days.map((d,i)=>{
+    const m25=avg(d.items.map(x=>x.pm25)), m10=avg(d.items.map(x=>x.pm10));
+    const aq25=aqiFromConc("pm25", m25), aq10=aqiFromConc("pm10", m10);
+    const a=Math.max(aq25||0, aq10||0), c=catFromAQI(a), domd=(aq25>=aq10?"PM2.5":"PM10");
+    const prev=i>0? Math.round(a - Math.max(aqiFromConc("pm25", avg(days[i-1].items.map(x=>x.pm25)))||0, aqiFromConc("pm10", avg(days[i-1].items.map(x=>x.pm10)))||0)) : null;
+    return { day:DAYS[d.date.getDay()], fullDay:d.date.toDateString(), score:Math.round(a), status:c.name, key:c.key, dom:domd, avg25:m25, avg10:m10, aqi25:aq25, aqi10:aq10, delta:prev };
+  }).slice(-7);
+
+  const row=document.getElementById("weekRow"); row.innerHTML="";
+  weekMeta.forEach(d=> addWeekChip(row, d));
+
+  // 7) click Today → modal
+  todayCard.onclick = ()=> openModal({
+    fullDay: latest.t.toDateString(), score: aqi, status: cat.name,
+    dom, avg25, avg10, aqi25:a25, aqi10:a10
+  });
+}
+
+/* Boot */
+load();
+setInterval(load, 5*60*1000); // รีเฟรชจากชีททุก 5 นาที
+</script>
+</body>
+</html>
