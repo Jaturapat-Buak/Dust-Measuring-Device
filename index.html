@@ -5,6 +5,68 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>AQI — Mono UI + Colorful Cards (Google Sheet Only)</title>
 <style>
+
+  .members{
+    display: flex;
+    gap: 16px;
+    flex-wrap: nowrap;       /* ห้ามตกล้นลงบรรทัดใหม่ */
+    overflow-x: auto;        /* จอแคบเลื่อนขวาได้ */
+    padding-bottom: 8px;     /* กันแถบสกอร์ลบังการ์ด */
+    scroll-snap-type: x proximity; /* เลื่อนแล้วหยุดที่การ์ด (สวยๆ) */
+  }
+  .card{
+    background: rgb(146, 144, 195);;
+    padding: 10px;
+    border-radius: 20px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+    transition: all 0.6s cubic-bezier(0.23, 1, 0.320, 1);
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+}
+
+.card img {
+    width: 200px;
+    border: 3px solid rgb(146, 144, 195);
+    height: 220px;
+    object-fit: cover;
+    border-radius: 12px;
+    transition: all 0.6s cubic-bezier(0.23, 1, 0.320, 1);
+    margin-bottom: 1rem;
+}
+
+.card-info {
+    color: white;
+    line-height: 1.7;
+    font-size: 1rem;
+    transition: color 0.3s ease;
+    text-align: center;
+}
+
+  /* ให้คอนเทนต์เลี่ยงแถบซ้าย */
+.page { margin-left: 240px; }
+
+/* จัดกึ่งกลางวิดีโอ */
+.center{
+  display: flex;
+  justify-content: center;
+  padding: 16px 0 40px;
+}
+
+/* iframe ตอบสนองทุกจอ */
+.responsive-vid{
+  display: block;
+  width: min(960px, 100%);
+  aspect-ratio: 16 / 9;  /* สูงอัตโนมัติ 16:9 */
+  height: auto;
+  border: 0;
+}
+
+/* จอแคบ ลด margin ด้านซ้ายตาม navbar */
+@media (max-width: 640px){
+  .page{ margin-left: 200px; }
+}
+
   /* ===== Monochrome Shell ===== */
   :root{
     --bg:#f9fafb; --surface:#ffffff; --text:#0f172a; --muted:#6b7280; --line:#e5e7eb;
@@ -98,7 +160,8 @@
 </style>
 </head>
 <body>
-  <div class="wrap">
+  <!-- Navbar -->
+  <div class="wrap" id = "main">
     <div class="top">
       <h1 class="title">Air Quality</h1>
       <div class="sub" id="updatedAt">กำลังโหลด…</div>
@@ -158,7 +221,44 @@
       <div class="ft"><button id="btnClose" class="btn">ปิด</button></div>
     </div>
   </div>
+    <div class="wrap">
+      <h1 class="title" id = "video">Present Video</h1>
+      <div id="video" class="center">
+        <iframe
+          class="responsive-vid"
+          src="https://www.youtube.com/embed/qhXLH3Ky7Bc?start"
+          title="YouTube video player"
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+          allowfullscreen
+        ></iframe>
+      </div>
+    </div>
 
+    <div class="wrap">
+      <h1 class="title" id = "member">Project Member</h1>
+
+      <div class="members">
+        <div class="card">
+          <img class="avatar" src="https://media.discordapp.net/attachments/1277183362611810415/1432048275040637141/jaturapat.jpg?ex=68ffa262&is=68fe50e2&hm=7588c578f3f60c0410f39d00ee290a716b0ef97ccf8d8d4270ddcb16ee491146&=&format=webp&width=774&height=968" alt="Jaturapat" loading="lazy">
+          <p class="card-info">Sarojphan Sritalalai </p>
+        </div>
+
+        <div class="card">
+          <img class="avatar" src="https://media.discordapp.net/attachments/1277183362611810415/1432048275040637141/jaturapat.jpg?ex=68ffa262&is=68fe50e2&hm=7588c578f3f60c0410f39d00ee290a716b0ef97ccf8d8d4270ddcb16ee491146&=&format=webp&width=774&height=968" alt="Jaturapat" loading="lazy">
+          <p class="card-info">Prapatpong Dawpradabwong</p>
+        </div>
+
+        <div class="card">
+          <img class="avatar" src="https://media.discordapp.net/attachments/1277183362611810415/1432048275040637141/jaturapat.jpg?ex=68ffa262&is=68fe50e2&hm=7588c578f3f60c0410f39d00ee290a716b0ef97ccf8d8d4270ddcb16ee491146&=&format=webp&width=774&height=968" alt="Jaturapat" loading="lazy">
+          <p class="card-info">Nattawut Thiprat</p>
+        </div>
+
+        <div class="card">
+          <img class="avatar" src="https://media.discordapp.net/attachments/1277183362611810415/1432048275040637141/jaturapat.jpg?ex=68ffa262&is=68fe50e2&hm=7588c578f3f60c0410f39d00ee290a716b0ef97ccf8d8d4270ddcb16ee491146&=&format=webp&width=774&height=968" alt="Jaturapat" loading="lazy">
+          <p class="card-info">Jaturapat Kitimaphokin</p>
+        </div>
+      </div>
+</div>
   <!-- DEBUG -->
   <div id="debugBox"></div>
 
