@@ -6,6 +6,10 @@
 # รายละเอียด
 - 
 
+# Resource
+Website - 
+Youtube Presentation - 
+
 ## Member
 |Student ID|Name|Topic|
 |--|--|--|
