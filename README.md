@@ -28,6 +28,10 @@ Website - https://jaturapat-buak.github.io/Dust-Measuring-Device.github.io/
 
 Youtube Presentation - 
 
+Google Sheet บันทึกค่าฝุ่น -
+
+API - 
+
 ## Member
 |Student ID|Name|Topic|
 |--|--|--|
