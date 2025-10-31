@@ -1,10 +1,10 @@
 # Dust-Measuring-Device
 Physical Computing Project 2025 - IT KMITL
 # วัตถุประสงค์
-- 
+- ตรวจวัดค่าฝุ่นเพื่อสำรวจพื้นที่ในบริเวณนั้น เพื่อบ่งบอกว่าเป็นพื้นที่ที่มีฝุ่นเยอะหรือฝุ่นน้อย
 
 # รายละเอียด
--
+- 
 
 ## Member
 |Student ID|Name|Topic|
