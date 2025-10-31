@@ -26,7 +26,7 @@
 ## Resource
 Website - https://jaturapat-buak.github.io/Dust-Measuring-Device.github.io/
 
-Youtube Presentation - 
+Youtube Presentation - https://youtu.be/brgeAXJRThI
 
 Google Sheet บันทึกค่าฝุ่น -
 
