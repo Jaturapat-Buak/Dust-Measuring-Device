@@ -28,9 +28,9 @@ Website - https://jaturapat-buak.github.io/Dust-Measuring-Device.github.io/
 
 Youtube Presentation - https://youtu.be/brgeAXJRThI
 
-Google Sheet บันทึกค่าฝุ่น -
+Google Sheet บันทึกค่าฝุ่น - https://docs.google.com/spreadsheets/d/1gyMroF_xEeT_jIClyFurf2qofKhUvtuT1SHRVAIpSoc/edit?gid=0#gid=0
 
-API - 
+API - https://script.google.com/macros/s/AKfycbyEPWSO9jlkaBM9hs4wEK4ctsdoj4kJaihP3s8cDLF-UDXqka9AUj1FxZgkIARBkdij/exec
 
 # Member
 |Student ID|Name|Topic|
