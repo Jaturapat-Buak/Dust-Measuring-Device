@@ -23,7 +23,7 @@
 3. ข้อมูลถูกส่งขึ้น Google Sheet ผ่าน Wi-Fi เพื่อเก็บและวิเคราะห์  
 4. ผู้ใช้สามารถดูข้อมูลย้อนหลังได้ทุกที่ทุกเวลา
 
-# Resource
+## Resource
 Website - https://jaturapat-buak.github.io/Dust-Measuring-Device.github.io/
 
 Youtube Presentation - 
