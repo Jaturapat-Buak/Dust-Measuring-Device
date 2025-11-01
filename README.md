@@ -11,7 +11,7 @@
 
 ## 📥 INPUT
 - เซนเซอร์ GP2Y1010AU0F สำหรับตรวจจับค่าฝุ่นในอากาศ
-- Resister
+- Resistor
 - Capacitor
 - ESP32
 
